@@ -1,32 +1,109 @@
 package UTM5::URFAClient::Daemon;
 
-use v5.10;
-use strict;
 use warnings;
+use strict;
+
+use Frontier::Daemon;
+use XML::Writer;
 
 =head1 NAME
 
-UTM5::URFAClient - Perl wrapper for Netup URFA Client
+UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-
-Version 0.1
+Version 0.10
 
 =cut
 
-our $VERSION = '0.1';
+our $VERSION = '0.10';
+
 
 =head1 SYNOPSIS
 
-=cut
+Quick summary of what the module does.
+
+Perhaps a little code snippet.
+
+    use UTM5::URFAClient::Daemon;
+
+    my $foo = UTM5::URFAClient::Daemon->new(<options>);
+    ...
 
 =head1 SUBROUTINES/METHODS
 
+=head2 new
 
-=head2 user_list
+	Starts daemon
+
+	Params:
+
+		port
 
 =cut
+
+sub new {
+	my ($class, $self) = @_;
+
+	bless $self, $class;
+
+	my $methods = { 'query' => sub { $self->_query(@_) } };
+
+	# TODO: Add local/remote checking
+
+	# Check params
+	$self->{port} ||= '39238';
+	$self->{path} ||= '/netup/utm5';
+	$self->{user} ||= 'init';
+	$self->{pass} ||= 'init';
+
+	warn "Starting Frontier HTTP daemon at port $self->{port}...\n";
+	return Frontier::Daemon->new(LocalPort => $self->{port}, methods => $methods)
+		or die "Couldn't start HTTP server: $!";
+}
+
+# Creating temporary XML file for UTM5
+sub _create_xml {
+	my ($self, $cmd, $params) = @_;
+
+	$self->{_fname} = 'tmp'.int((time * (rand() * 10000)) / 1000);
+	open FILE, ">".$self->{path}."/xml/".$self->{_fname}.".xml";
+
+	my $writer = new XML::Writer(OUTPUT => \*FILE, ENCODING => 'utf-8');
+	$writer->startTag('urfa');
+
+	if(!$params) {
+		$writer->emptyTag('call', function => $cmd);
+	} else {
+		$writer->startTag('call', function => $cmd);
+
+		while(my ($key, $value) = each %$params) {
+		    $writer->emptyTag('parameter', name => $key, value => $value);
+		}
+
+		$writer->endTag('call');
+    }
+
+	$writer->endTag('urfa');
+	$writer->end();
+
+	close FILE;
+	return $self->{_fname};
+}
+
+sub _query {
+	my ($self, $cmd, $params) = @_;
+	my $stdout;
+	warn " * Query received: $cmd\n";
+
+	my $action = $self->_create_xml($cmd, $params);
+	warn "\tPATH: $self->{path}\n";
+	warn "\tUSER: $self->{user}\n";
+	warn "\tPASS: $self->{pass}\n\n";
+	$stdout = `$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $cmd`;
+
+	return $stdout;
+}
 
 =head1 AUTHOR
 
@@ -44,7 +121,7 @@ I will be notified, and then you'll automatically be notified of progress on you
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc UTM5::URFAClient
+    perldoc UTM5::URFAClient::Daemon
 
 
 You can also look for information at:
@@ -75,4 +152,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 =cut
 
-1; # End of UTM5::URFAClient
+1; # End of UTM5::URFAClient::Daemon
