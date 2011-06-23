@@ -46,7 +46,7 @@ TODO: {
     "placeholder date/time"       => qr(Date/time)
   );
 
-  module_boilerplate_ok('lib/UTM5/URFAClient.pm');
+  module_boilerplate_ok('lib/UTM5/URFAClient/Daemon.pm');
 
 
 }
