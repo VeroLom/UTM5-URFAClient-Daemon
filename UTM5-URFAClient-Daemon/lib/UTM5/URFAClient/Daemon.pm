@@ -12,11 +12,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 =cut
 
-our $VERSION = '0.10';
+our $VERSION = '0.12';
 
 
 =head1 SYNOPSIS
@@ -39,6 +39,9 @@ Perhaps a little code snippet.
 	Params:
 
 		port
+		path
+		user
+		pass
 
 =cut
 
@@ -62,16 +65,25 @@ sub new {
 		or die "Couldn't start HTTP server: $!";
 }
 
+# Calculate array dimensions
+sub _t {
+	return $_[1] if ref $_[0] ne 'ARRAY';
+	t($_[0]->[0], ++$_[1]);
+}
+
 # Creating temporary XML file for UTM5
 sub _create_xml {
-	my ($self, $cmd, $params) = @_;
+	my ($self, $cmd, $params, $data) = @_;
 
+	# Open temporary action xml file
 	$self->{_fname} = 'tmp'.int((time * (rand() * 10000)) / 1000);
 	open FILE, ">".$self->{path}."/xml/".$self->{_fname}.".xml";
 
+	# Init XML writer
 	my $writer = new XML::Writer(OUTPUT => \*FILE, ENCODING => 'utf-8');
 	$writer->startTag('urfa');
 
+	# Generate param nodes
 	if(!$params) {
 		$writer->emptyTag('call', function => $cmd);
 	} else {
@@ -87,20 +99,42 @@ sub _create_xml {
 	$writer->endTag('urfa');
 	$writer->end();
 
+	# Close temp action xml file
 	close FILE;
-	return $self->{_fname};
+
+
+	# Generate datafile if data received
+	if($data) {
+		# Open temporary data file
+		$self->{_dname} = 'dat'.int((time * (rand() * 10101)) / 1000);
+		open DATA, ">".$self->{path}."/xml/".$self->{_dname}.".xml";
+
+		print DATA $data;
+
+		close DATA;
+	}
+
+	return ($self->{_fname}, $self->{_dname});
 }
 
 sub _query {
-	my ($self, $cmd, $params) = @_;
+	my ($self, $cmd, $params, $data) = @_;
 	my $stdout;
 	warn " * Query received: $cmd\n";
 
-	my $action = $self->_create_xml($cmd, $params);
+	my ($action, $datafile) = $self->_create_xml($cmd, $params, $data);
 	warn "\tPATH: $self->{path}\n";
 	warn "\tUSER: $self->{user}\n";
-	warn "\tPASS: $self->{pass}\n\n";
-	$stdout = `$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $cmd`;
+	warn "\tPASS: $self->{pass}\n";
+	warn "\tFNME: $self->{_fname}\n";
+	warn "\tCMND: $cmd\n";
+	warn "\tACTN: $action\n\n";
+	$stdout = `$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action `.($data ? ' -datafile $datafile' : '');
+
+	print "="x77;
+	print "\n\n".$stdout."\n\n";
+	print "="x77, "\n";
+	unlink $self->{path}.'/xml/'.$self->{_fname}.'.xml';
 
 	return $stdout;
 }
@@ -111,8 +145,8 @@ Nikita Melikhov, C<< <ver at 0xff.su> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to C<bug-utm5-urfaclient at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=UTM5-URFAClient>.
+Please report any bugs or feature requests to C<bug-utm5-urfaclient-daemon at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=UTM5-URFAClient-Daemon>.
 I will be notified, and then you'll automatically be notified of progress on your bug as I make changes.
 
 
@@ -134,7 +168,7 @@ L<http://www.netup.ru/>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=UTM5-URFAClient>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=UTM5-URFAClient-Daemon>
 
 =back
 
