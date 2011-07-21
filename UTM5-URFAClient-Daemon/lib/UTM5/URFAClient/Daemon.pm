@@ -129,7 +129,8 @@ sub _query {
 	warn "\tFNME: $self->{_fname}\n";
 	warn "\tCMND: $cmd\n";
 	warn "\tACTN: $action\n\n";
-	$stdout = `$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action `.($data ? ' -datafile $datafile' : '');
+	my $run = "$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action ".($data ? " -datafile $datafile" : '');
+	$stdout = `$run`;
 
 	print "="x77;
 	print "\n\n".$stdout."\n\n";
