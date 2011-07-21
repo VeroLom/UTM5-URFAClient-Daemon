@@ -12,11 +12,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.11
+Version 0.13
 
 =cut
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 
 =head1 SYNOPSIS
@@ -129,7 +129,7 @@ sub _query {
 	warn "\tFNME: $self->{_fname}\n";
 	warn "\tCMND: $cmd\n";
 	warn "\tACTN: $action\n\n";
-	my $run = "$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action ".($data ? " -datafile $datafile.xml" : '');
+	my $run = "$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action ".($data ? " -datafile $self->{path}/xml/$datafile.xml" : '');
 	print "\nDEBUG: $run\n\n";
 	$stdout = `$run`;
 
