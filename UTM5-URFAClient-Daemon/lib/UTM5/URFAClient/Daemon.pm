@@ -14,11 +14,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.21
+Version 0.22
 
 =cut
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 
 
 =head1 SYNOPSIS
@@ -60,10 +60,10 @@ sub new {
 	}
 
 	# Check params
-	$self->{port} ||= '39238';
-	$self->{path} ||= '/netup/utm5';
-	$self->{user} ||= 'init';
-	$self->{pass} ||= 'init';
+	$self->{config}->{port} ||= '39238';
+	$self->{config}->{path} ||= '/netup/utm5';
+	$self->{config}->{user} ||= 'init';
+	$self->{config}->{pass} ||= 'init';
 
 	warn "Starting URFA XML-RPC daemon at port $self->{port}...\n";
 
@@ -74,7 +74,7 @@ sub new {
 		}
 	});
 
-	my $server = RPC::XML::Server->new(port => $self->{port})
+	my $server = RPC::XML::Server->new(port => $self->{config}->{port})
 		or die "Couldn't start HTTP server: $!";
 	$server->add_method($query);
 
@@ -93,7 +93,7 @@ sub _create_xml {
 
 	# Open temporary action xml file
 	$self->{_fname} = 'tmp'.int((time * (rand() * 10000)) / 1000);
-	open FILE, ">".$self->{path}."/xml/".$self->{_fname}.".xml";
+	open FILE, ">".$self->{config}->{path}."/xml/".$self->{_fname}.".xml";
 
 	# Init XML writer
 	my $writer = new XML::Writer(OUTPUT => \*FILE, ENCODING => 'utf-8');
@@ -123,7 +123,7 @@ sub _create_xml {
 	if($data) {
 		# Open temporary data file
 		$self->{_dname} = 'dat'.int((time * (rand() * 10101)) / 1000);
-		open DATA, ">".$self->{path}."/xml/".$self->{_dname}.".xml";
+		open DATA, ">".$self->{config}->{path}."/xml/".$self->{_dname}.".xml";
 
 		print DATA $data;
 
@@ -145,14 +145,15 @@ sub _query {
 	warn "\tFNME: $self->{_fname}\n";
 	warn "\tCMND: $cmd\n";
 	warn "\tACTN: $action\n\n";
-	my $run = "$self->{path}/bin/utm5_urfaclient -l '$self->{user}' -P '$self->{pass}' -a $action ".($data ? " -datafile $self->{path}/xml/$datafile.xml" : '');
+	my $run = "$self->{config}->{path}/bin/utm5_urfaclient -l '$self->{config}->{user}' -P '$self->{config}->{pass}' -a $action ".($data ? " -datafile $self->{config}->{path}/xml/$datafile.xml" : '');
 	print "\nDEBUG: $run\n\n";
 	$stdout = `$run`;
 
 	print "="x77;
 	print "\n\n".$stdout."\n\n";
 	print "="x77, "\n";
-	unlink $self->{path}.'/xml/'.$self->{_fname}.'.xml';
+	unlink $self->{config}->{path}.'/xml/'.$self->{_fname}.'.xml';
+	unlink $self->{config}->{path}.'/xml/'.$self->{_fname}.'.xml' if $self->{_dname};
 
 	return $stdout;
 }
