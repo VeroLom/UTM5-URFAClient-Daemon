@@ -3,7 +3,8 @@ package UTM5::URFAClient::Daemon;
 use warnings;
 use strict;
 
-use Frontier::Daemon;
+use RPC::XML::Server;
+use RPC::XML::Function;
 use XML::Writer;
 
 =head1 NAME
@@ -12,11 +13,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.13
+Version 0.20
 
 =cut
 
-our $VERSION = '0.13';
+our $VERSION = '0.20';
 
 
 =head1 SYNOPSIS
@@ -60,9 +61,20 @@ sub new {
 	$self->{user} ||= 'init';
 	$self->{pass} ||= 'init';
 
-	warn "Starting Frontier HTTP daemon at port $self->{port}...\n";
-	return Frontier::Daemon->new(LocalPort => $self->{port}, methods => $methods)
+	warn "Starting URFA XML-RPC daemon at port $self->{port}...\n";
+
+	my $query = RPC::XML::Function->new({
+		name	=> 'query',
+		code	=> sub {
+			return $self->_query(@_)
+		}
+	});
+
+	my $server = RPC::XML::Server->new(port => $self->{port})
 		or die "Couldn't start HTTP server: $!";
+	$server->add_method($query);
+
+	return ($server, $server->server_loop);
 }
 
 # Calculate array dimensions

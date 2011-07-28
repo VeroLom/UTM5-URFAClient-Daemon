@@ -17,7 +17,8 @@ WriteMakefile(
     },
     PREREQ_PM => {
         'Test::More'		=> 0,
-        'Frontier::Daemon'	=> 0,
+        'RPC::XML::Server'	=> 0,
+	'RPC::XML::Function'	=> 0,
         'XML::Writer'		=> 0
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
