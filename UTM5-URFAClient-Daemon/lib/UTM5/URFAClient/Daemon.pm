@@ -3,6 +3,7 @@ package UTM5::URFAClient::Daemon;
 use warnings;
 use strict;
 
+use UNIS::Common::Utils qw|ut_read_config_ini|;
 use RPC::XML::Server;
 use RPC::XML::Function;
 use XML::Writer;
@@ -13,11 +14,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.20
+Version 0.21
 
 =cut
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
 
 =head1 SYNOPSIS
@@ -53,7 +54,10 @@ sub new {
 
 	my $methods = { 'query' => sub { $self->_query(@_) } };
 
-	# TODO: Add local/remote checking
+	if($self->{config}) {
+		print "Reading config $self->{config}...\n";
+		$self->{config} = ut_read_config_ini($self->{config});
+	}
 
 	# Check params
 	$self->{port} ||= '39238';
