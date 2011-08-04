@@ -14,11 +14,11 @@ UTM5::URFAClient::Daemon - Daemon for L<UTM5::URFAClient>
 
 =head1 VERSION
 
-Version 0.22
+Version 0.25
 
 =cut
 
-our $VERSION = '0.22';
+our $VERSION = '0.25';
 
 
 =head1 SYNOPSIS
@@ -65,7 +65,7 @@ sub new {
 	$self->{config}->{user} ||= 'init';
 	$self->{config}->{pass} ||= 'init';
 
-	warn "Starting URFA XML-RPC daemon at port $self->{port}...\n";
+	warn "Starting URFA XML-RPC daemon at port $self->{config}->{port}...\n";
 
 	my $query = RPC::XML::Function->new({
 		name	=> 'query',
@@ -139,9 +139,9 @@ sub _query {
 	warn " * Query received: $cmd\n";
 
 	my ($action, $datafile) = $self->_create_xml($cmd, $params, $data);
-	warn "\tPATH: $self->{path}\n";
-	warn "\tUSER: $self->{user}\n";
-	warn "\tPASS: $self->{pass}\n";
+	warn "\tPATH: $self->{config}->{path}\n";
+	warn "\tUSER: $self->{config}->{user}\n";
+	warn "\tPASS: $self->{config}->{pass}\n";
 	warn "\tFNME: $self->{_fname}\n";
 	warn "\tCMND: $cmd\n";
 	warn "\tACTN: $action\n\n";
